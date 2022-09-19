@@ -4,14 +4,25 @@ const MIN_NEIGHBOURS: usize = 2;
 const MAX_NEIGHBOURS: usize = 3;
 const NEIGHBOURS_NEEDED_TO_REVIVE: usize = 3;
 
-struct Alive;
+#[derive(Clone)]
+pub(crate) struct Alive;
 
-struct Dead;
+#[derive(Clone)]
+pub(crate) struct Dead;
 
-#[derive(Default)]
-struct Cell<State = Dead> {
+#[derive(Clone)]
+pub(crate) struct Cell<State = Dead> {
     state: PhantomData<State>,
-    neighbours: Vec<usize>,
+    pub(crate) neighbours: Vec<usize>,
+}
+
+impl Default for Cell<Dead> {
+    fn default() -> Self {
+        Cell {
+            state: PhantomData,
+            neighbours: Vec::new(),
+        }
+    }
 }
 
 impl<State> Cell<State> {
@@ -35,7 +46,7 @@ impl Cell<Alive> {
         true
     }
 
-    fn die(&self, neighborhood: &[Cell]) -> Option<Cell<Dead>> {
+    pub(crate) fn next(&self, neighborhood: &[Cell]) -> Option<Cell<Dead>> {
         let alive_neighbours = self
             .neighbours
             .iter()
@@ -51,7 +62,7 @@ impl Cell<Alive> {
 }
 
 impl Cell<Dead> {
-    fn revive(&self, neighborhood: &[Cell]) -> Option<Cell<Alive>> {
+    pub(crate) fn next(&self, neighborhood: &[Cell]) -> Option<Cell<Alive>> {
         let alive_neighbours = self
             .neighbours
             .iter()
@@ -67,9 +78,5 @@ impl Cell<Dead> {
 
     fn is_alive(&self) -> bool {
         false
-    }
-
-    fn next(&self) -> Cell {
-        todo!()
     }
 }
