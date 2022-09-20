@@ -1,75 +1,59 @@
 use std::marker::PhantomData;
 
-const MIN_NEIGHBOURS: usize = 2;
-const MAX_NEIGHBOURS: usize = 3;
-const NEIGHBOURS_NEEDED_TO_REVIVE: usize = 3;
+const STAY_ALIVE_MIN_NEIGHBOURS: usize = 2;
+const STAY_ALIVE_MAX_NEIGHBOURS: usize = 3;
+const REVIVE_MIN_NEIGHBOURS: usize = 3;
+const REVIVE_MAX_NEIGHBOURS: usize = 3;
 
-struct Alive;
+#[derive(Debug)]
+pub(crate) struct Alive;
 
-struct Dead;
+#[derive(Debug)]
+pub(crate) struct Dead;
 
-#[derive(Default)]
-struct Cell<State = Dead> {
+#[derive(Debug)]
+pub(crate) struct Cell<State = Dead> {
     state: PhantomData<State>,
     neighbours: Vec<usize>,
 }
 
 impl<State> Cell<State> {
-    fn proceed<NextState>(&self) -> Cell<NextState> {
-        Cell {
-            state: PhantomData,
-            neighbours: self.neighbours.clone(),
-        }
-    }
-
-    fn stay(&self) -> Self {
-        Self {
-            state: PhantomData,
-            neighbours: self.neighbours.clone(),
-        }
+    fn count_alive_neighbours(&self) -> usize {
+        todo!()
     }
 }
 
-impl Cell<Alive> {
-    fn is_alive(&self) -> bool {
-        true
-    }
-
-    fn die(&self, neighborhood: &[Cell]) -> Option<Cell<Dead>> {
-        let alive_neighbours = self
-            .neighbours
-            .iter()
-            .filter(|neighbour| neighborhood[**neighbour].is_alive())
-            .count();
-
-        if MAX_NEIGHBOURS >= alive_neighbours && alive_neighbours >= MIN_NEIGHBOURS {
+impl<'a> Cell<Alive> {
+    pub fn next(self) -> Option<Cell<Dead>> {
+        let count_alive = self.count_alive_neighbours();
+        if count_alive >= STAY_ALIVE_MIN_NEIGHBOURS && count_alive <= STAY_ALIVE_MAX_NEIGHBOURS {
             return None;
         }
 
-        Some(self.proceed::<Dead>())
+        Some(Cell::<Dead> {
+            state: PhantomData,
+            neighbours: self.neighbours,
+        })
     }
 }
 
-impl Cell<Dead> {
-    fn revive(&self, neighborhood: &[Cell]) -> Option<Cell<Alive>> {
-        let alive_neighbours = self
-            .neighbours
-            .iter()
-            .filter(|neighbour| neighborhood[**neighbour].is_alive())
-            .count();
+impl<'a> Cell<Dead> {
+    pub fn new(neighbours: Vec<usize>) -> Self {
+        Self {
+            state: PhantomData,
+            neighbours: neighbours,
+        }
+    }
 
-        if NEIGHBOURS_NEEDED_TO_REVIVE == alive_neighbours {
-            return Some(self.proceed::<Alive>());
+    pub fn next(self) -> Option<Cell<Alive>> {
+        let count_alive = self.count_alive_neighbours();
+        if count_alive > REVIVE_MAX_NEIGHBOURS || count_alive < REVIVE_MIN_NEIGHBOURS {
+            return None;
         }
 
-        None
-    }
-
-    fn is_alive(&self) -> bool {
-        false
-    }
-
-    fn next(&self) -> Cell {
-        todo!()
+        Some(Cell::<Alive> {
+            state: PhantomData,
+            neighbours: self.neighbours,
+        })
     }
 }
